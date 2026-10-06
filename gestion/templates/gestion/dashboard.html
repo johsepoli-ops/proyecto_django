@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Panel principal</title>
+</head>
+
+<body>
+
+    <h1>Sistema de Gestión de Mantenimiento</h1>
+
+    <p>
+        Bienvenido:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    {% if request.user.is_superuser %}
+
+        <p>
+            Rol:
+            <strong>Administrador</strong>
+        </p>
+
+    {% elif perms.gestion.change_workorder %}
+
+        <p>
+            Rol:
+            <strong>Operador</strong>
+        </p>
+
+    {% else %}
+
+        <p>
+            Rol:
+            <strong>Lector</strong>
+        </p>
+
+    {% endif %}
+
+    <p>
+        Órdenes disponibles:
+        <strong>{{ total_work_orders }}</strong>
+    </p>
+
+    <hr>
+
+    <h2>Órdenes de trabajo recientes</h2>
+
+    {% for order in work_orders|slice:":10" %}
+
+        <p>
+
+            <strong>
+                {{ order.number }}
+            </strong>
+
+            -
+
+            {{ order.equipment }}
+
+            -
+
+            {{ order.status }}
+
+            -
+
+            Propietario:
+            {{ order.owner.username }}
+
+        </p>
+
+    {% empty %}
+
+        <p>
+            No existen órdenes disponibles.
+        </p>
+
+    {% endfor %}
+
+    <hr>
+
+    <h2>Opciones</h2>
+
+    <p>
+        <a href="{% url 'gestion:workorder_list' %}">
+            Gestionar órdenes de trabajo
+        </a>
+    </p>
+
+    <p>
+        <a href="{% url 'gestion:equipment_list' %}">
+            Gestionar equipos
+        </a>
+    </p>
+
+    <p>
+        <a href="{% url 'gestion:company_list' %}">
+            Gestionar empresas
+        </a>
+    </p>
+
+    <p>
+        <a href="{% url 'gestion:evidence_list' %}">
+            Gestionar evidencias
+        </a>
+    </p>
+
+    <hr>
+
+    <p>
+        <a href="{% url 'accounts:logout' %}">
+            Cerrar sesión
+        </a>
+    </p>
+
+</body>
+
+</html>

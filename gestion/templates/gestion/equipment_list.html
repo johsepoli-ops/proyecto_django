@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Equipos</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <h1>Equipos</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        Usuario:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    {% if perms.gestion.add_equipment %}
+        <p>
+            <a href="{% url 'gestion:equipment_create' %}">
+                Crear nuevo equipo
+            </a>
+        </p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Paginación</h2>
+
+    <form method="get">
+
+        <label for="per_page">
+            Registros por página:
+        </label>
+
+        <select
+            name="per_page"
+            id="per_page"
+            onchange="this.form.submit()"
+        >
+
+            <option
+                value="5"
+                {% if per_page == 5 %}
+                    selected
+                {% endif %}
+            >
+                5
+            </option>
+
+            <option
+                value="15"
+                {% if per_page == 15 %}
+                    selected
+                {% endif %}
+            >
+                15
+            </option>
+
+            <option
+                value="30"
+                {% if per_page == 30 %}
+                    selected
+                {% endif %}
+            >
+                30
+            </option>
+
+        </select>
+
+    </form>
+
+    <p>
+        Total de equipos:
+        <strong>
+            {{ page_obj.paginator.count }}
+        </strong>
+    </p>
+
+    <hr>
+
+    {% for equipment in equipments %}
+
+        <div>
+
+            <p>
+                <strong>
+                    {{ equipment.code }}
+                </strong>
+
+                -
+
+                {{ equipment.name }}
+            </p>
+
+            <p>
+                Tipo:
+                {{ equipment.equipment_type }}
+            </p>
+
+            <p>
+                Área:
+                {{ equipment.area }}
+            </p>
+
+            <p>
+                Marca:
+                {{ equipment.brand }}
+            </p>
+
+            <p>
+                Modelo:
+                {{ equipment.model }}
+            </p>
+
+            <p>
+                Número de serie:
+                {{ equipment.serial_number }}
+            </p>
+
+            <p>
+                Fecha de adquisición:
+                {{ equipment.acquisition_date }}
+            </p>
+
+            <p>
+                Activo:
+
+                {% if equipment.active %}
+                    Sí
+                {% else %}
+                    No
+                {% endif %}
+            </p>
+
+            {% if perms.gestion.change_equipment %}
+
+                <a href="{% url 'gestion:equipment_update' equipment.pk %}">
+                    Editar
+                </a>
+
+            {% endif %}
+
+            {% if perms.gestion.delete_equipment %}
+
+                <form
+                    id="delete-equipment-form-{{ equipment.pk }}"
+                    method="post"
+                    action="{% url 'gestion:equipment_delete' equipment.pk %}"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="button"
+                        onclick="confirmEquipmentDelete(
+                            '{{ equipment.pk }}',
+                            '{{ equipment.code|escapejs }}'
+                        )"
+                    >
+                        Eliminar
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>
+            No existen equipos disponibles.
+        </p>
+
+    {% endfor %}
+
+    <h2>Navegación</h2>
+
+    <div>
+
+        {% if page_obj.has_previous %}
+
+            <a href="?page=1&per_page={{ per_page }}">
+                Primera
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}">
+                Anterior
+            </a>
+
+            |
+
+        {% endif %}
+
+        <span>
+            Página
+            <strong>{{ page_obj.number }}</strong>
+            de
+            <strong>{{ page_obj.paginator.num_pages }}</strong>
+        </span>
+
+        {% if page_obj.has_next %}
+
+            |
+
+            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}">
+                Siguiente
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.paginator.num_pages }}&per_page={{ per_page }}">
+                Última
+            </a>
+
+        {% endif %}
+
+    </div>
+
+    <br>
+
+    <p>
+        Mostrando hasta
+        <strong>{{ per_page }}</strong>
+        registros por página.
+    </p>
+
+    <hr>
+
+    <p>
+        <a href="{% url 'dashboard' %}">
+            Volver al panel principal
+        </a>
+    </p>
+
+    <script>
+
+        function confirmEquipmentDelete(
+            equipmentId,
+            equipmentCode
+        ) {
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text:
+                    'El equipo ' +
+                    equipmentCode +
+                    ' será eliminado lógicamente.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    document
+                        .getElementById(
+                            'delete-equipment-form-' +
+                            equipmentId
+                        )
+                        .submit();
+                }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

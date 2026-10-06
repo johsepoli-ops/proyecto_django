@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Evidencias de mantenimiento</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <h1>Evidencias de mantenimiento</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        Usuario:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    {% if perms.gestion.add_maintenanceevidence %}
+        <p>
+            <a href="{% url 'gestion:evidence_create' %}">
+                Agregar nueva evidencia
+            </a>
+        </p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Paginación</h2>
+
+    <form method="get">
+
+        <label for="per_page">
+            Registros por página:
+        </label>
+
+        <select
+            name="per_page"
+            id="per_page"
+            onchange="this.form.submit()"
+        >
+
+            <option
+                value="5"
+                {% if per_page == 5 %}
+                    selected
+                {% endif %}
+            >
+                5
+            </option>
+
+            <option
+                value="15"
+                {% if per_page == 15 %}
+                    selected
+                {% endif %}
+            >
+                15
+            </option>
+
+            <option
+                value="30"
+                {% if per_page == 30 %}
+                    selected
+                {% endif %}
+            >
+                30
+            </option>
+
+        </select>
+
+    </form>
+
+    <p>
+        Total de evidencias:
+        <strong>
+            {{ page_obj.paginator.count }}
+        </strong>
+    </p>
+
+    <hr>
+
+    {% for evidence in evidences %}
+
+        <div>
+
+            <p>
+                <strong>
+                    Orden:
+                    {{ evidence.work_order.number }}
+                </strong>
+            </p>
+
+            <p>
+                Equipo:
+                {{ evidence.work_order.equipment }}
+            </p>
+
+            <p>
+                Descripción:
+                {{ evidence.description }}
+            </p>
+
+            <p>
+                Propietario de la orden:
+                {{ evidence.work_order.owner.username }}
+            </p>
+
+            <p>
+                Fecha de carga:
+                {{ evidence.uploaded_at }}
+            </p>
+
+            {% if evidence.file %}
+
+                <p>
+                    Archivo:
+                    <a
+                        href="{{ evidence.file.url }}"
+                        target="_blank"
+                    >
+                        Ver imagen
+                    </a>
+                </p>
+
+                <img
+                    src="{{ evidence.file.url }}"
+                    alt="Evidencia de mantenimiento"
+                    style="max-width: 300px; max-height: 300px;"
+                >
+
+            {% else %}
+
+                <p>
+                    Sin imagen
+                </p>
+
+            {% endif %}
+
+            <br>
+            <br>
+
+            {% if perms.gestion.change_maintenanceevidence %}
+
+                <a href="{% url 'gestion:evidence_update' evidence.pk %}">
+                    Editar
+                </a>
+
+            {% endif %}
+
+            {% if perms.gestion.delete_maintenanceevidence %}
+
+                <form
+                    id="delete-evidence-form-{{ evidence.pk }}"
+                    method="post"
+                    action="{% url 'gestion:evidence_delete' evidence.pk %}"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="button"
+                        onclick="confirmEvidenceDelete(
+                            '{{ evidence.pk }}',
+                            '{{ evidence.description|escapejs }}'
+                        )"
+                    >
+                        Eliminar
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>
+            No existen evidencias disponibles.
+        </p>
+
+    {% endfor %}
+
+    <h2>Navegación</h2>
+
+    <div>
+
+        {% if page_obj.has_previous %}
+
+            <a href="?page=1&per_page={{ per_page }}">
+                Primera
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}">
+                Anterior
+            </a>
+
+            |
+
+        {% endif %}
+
+        <span>
+            Página
+            <strong>{{ page_obj.number }}</strong>
+            de
+            <strong>{{ page_obj.paginator.num_pages }}</strong>
+        </span>
+
+        {% if page_obj.has_next %}
+
+            |
+
+            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}">
+                Siguiente
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.paginator.num_pages }}&per_page={{ per_page }}">
+                Última
+            </a>
+
+        {% endif %}
+
+    </div>
+
+    <br>
+
+    <p>
+        Mostrando hasta
+        <strong>{{ per_page }}</strong>
+        registros por página.
+    </p>
+
+    <hr>
+
+    <p>
+        <a href="{% url 'dashboard' %}">
+            Volver al panel principal
+        </a>
+    </p>
+
+    <script>
+
+        function confirmEvidenceDelete(
+            evidenceId,
+            evidenceDescription
+        ) {
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text:
+                    'La evidencia "' +
+                    evidenceDescription +
+                    '" será eliminada lógicamente.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    document
+                        .getElementById(
+                            'delete-evidence-form-' +
+                            evidenceId
+                        )
+                        .submit();
+                }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

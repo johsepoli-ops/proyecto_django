@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Órdenes de trabajo</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <h1>Órdenes de trabajo</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        Usuario:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    {% if perms.gestion.add_workorder %}
+        <p>
+            <a href="{% url 'gestion:workorder_create' %}">
+                Crear nueva orden de trabajo
+            </a>
+        </p>
+    {% endif %}
+
+    <p>
+        <a href="{% url 'gestion:export_workorders_excel' %}">
+            Exportar órdenes a Excel
+        </a>
+    </p>
+
+    <hr>
+
+    <h2>Paginación</h2>
+
+    <form method="get">
+
+        <label for="per_page">
+            Registros por página:
+        </label>
+
+        <select
+            name="per_page"
+            id="per_page"
+            onchange="this.form.submit()"
+        >
+
+            <option
+                value="5"
+                {% if per_page == 5 %}
+                    selected
+                {% endif %}
+            >
+                5
+            </option>
+
+            <option
+                value="15"
+                {% if per_page == 15 %}
+                    selected
+                {% endif %}
+            >
+                15
+            </option>
+
+            <option
+                value="30"
+                {% if per_page == 30 %}
+                    selected
+                {% endif %}
+            >
+                30
+            </option>
+
+        </select>
+
+    </form>
+
+    <p>
+        Total de órdenes:
+        <strong>
+            {{ page_obj.paginator.count }}
+        </strong>
+    </p>
+
+    <hr>
+
+    {% for work_order in work_orders %}
+
+        <div>
+
+            <p>
+                <strong>
+                    {{ work_order.number }}
+                </strong>
+            </p>
+
+            <p>
+                Equipo:
+                {{ work_order.equipment }}
+            </p>
+
+            <p>
+                Estado:
+                {{ work_order.status }}
+            </p>
+
+            <p>
+                Prioridad:
+                {{ work_order.priority }}
+            </p>
+
+            <p>
+                Tipo de mantenimiento:
+                {{ work_order.maintenance_type }}
+            </p>
+
+            <p>
+                Responsable:
+                {{ work_order.responsible }}
+            </p>
+
+            <p>
+                Propietario:
+                {{ work_order.owner.username }}
+            </p>
+
+            {% if perms.gestion.change_workorder %}
+
+                <a href="{% url 'gestion:workorder_update' work_order.pk %}">
+                    Editar
+                </a>
+
+            {% endif %}
+
+            {% if perms.gestion.delete_workorder %}
+
+                <form
+                    id="delete-form-{{ work_order.pk }}"
+                    method="post"
+                    action="{% url 'gestion:workorder_delete' work_order.pk %}"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="button"
+                        onclick="confirmDelete(
+                            '{{ work_order.pk }}',
+                            '{{ work_order.number|escapejs }}'
+                        )"
+                    >
+                        Eliminar
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>
+            No existen órdenes de trabajo disponibles.
+        </p>
+
+    {% endfor %}
+
+    <h2>Navegación</h2>
+
+    <div>
+
+        {% if page_obj.has_previous %}
+
+            <a href="?page=1&per_page={{ per_page }}">
+                Primera
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}">
+                Anterior
+            </a>
+
+            |
+
+        {% endif %}
+
+        <span>
+            Página
+            <strong>{{ page_obj.number }}</strong>
+            de
+            <strong>{{ page_obj.paginator.num_pages }}</strong>
+        </span>
+
+        {% if page_obj.has_next %}
+
+            |
+
+            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}">
+                Siguiente
+            </a>
+
+            |
+
+            <a href="?page={{ page_obj.paginator.num_pages }}&per_page={{ per_page }}">
+                Última
+            </a>
+
+        {% endif %}
+
+    </div>
+
+    <br>
+
+    <p>
+        Mostrando hasta
+        <strong>{{ per_page }}</strong>
+        registros por página.
+    </p>
+
+    <hr>
+
+    <p>
+        <a href="{% url 'dashboard' %}">
+            Volver al panel principal
+        </a>
+    </p>
+
+    <p>
+        <a href="{% url 'accounts:logout' %}">
+            Cerrar sesión
+        </a>
+    </p>
+
+    <script>
+
+        function confirmDelete(
+            workOrderId,
+            workOrderNumber
+        ) {
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text:
+                    'La orden ' +
+                    workOrderNumber +
+                    ' será eliminada lógicamente.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    document
+                        .getElementById(
+                            'delete-form-' +
+                            workOrderId
+                        )
+                        .submit();
+                }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

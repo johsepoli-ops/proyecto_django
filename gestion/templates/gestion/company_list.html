@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Empresas</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <h1>Empresas</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        Usuario:
+        <strong>{{ request.user.username }}</strong>
+    </p>
+
+    {% if perms.gestion.add_company %}
+        <a href="{% url 'gestion:company_create' %}">
+            Crear nueva empresa
+        </a>
+    {% endif %}
+
+    <hr>
+
+    {% for company in companies %}
+
+        <div>
+
+            <p>
+                <strong>{{ company.name }}</strong>
+            </p>
+
+            <p>
+                RUT:
+                {{ company.rut }}
+            </p>
+
+            <p>
+                Dirección:
+                {{ company.address }}
+            </p>
+
+            <p>
+                Teléfono:
+                {{ company.phone }}
+            </p>
+
+            <p>
+                Activa:
+                {% if company.active %}
+                    Sí
+                {% else %}
+                    No
+                {% endif %}
+            </p>
+
+            {% if perms.gestion.change_company %}
+
+                <a href="{% url 'gestion:company_update' company.pk %}">
+                    Editar
+                </a>
+
+            {% endif %}
+
+            {% if perms.gestion.delete_company and company.active %}
+
+                <form
+                    id="delete-company-form-{{ company.pk }}"
+                    method="post"
+                    action="{% url 'gestion:company_delete' company.pk %}"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button
+                        type="button"
+                        onclick="confirmCompanyDelete(
+                            '{{ company.pk }}',
+                            '{{ company.name|escapejs }}'
+                        )"
+                    >
+                        Desactivar
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>
+            No existen empresas disponibles.
+        </p>
+
+    {% endfor %}
+
+    <a href="{% url 'dashboard' %}">
+        Volver al panel principal
+    </a>
+
+    <script>
+        function confirmCompanyDelete(
+            companyId,
+            companyName
+        ) {
+
+            Swal.fire({
+                title: '¿Está seguro?',
+                text:
+                    'La empresa ' +
+                    companyName +
+                    ' será desactivada.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, desactivar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    document
+                        .getElementById(
+                            'delete-company-form-' +
+                            companyId
+                        )
+                        .submit();
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>

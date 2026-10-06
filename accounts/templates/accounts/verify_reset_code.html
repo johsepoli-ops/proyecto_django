@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar código</title>
+</head>
+
+<body>
+
+    <h1>Verificar código</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        Ingresa el código numérico de 6 dígitos.
+    </p>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <label for="code">
+            Código:
+        </label>
+
+        <input
+            type="text"
+            id="code"
+            name="code"
+            maxlength="6"
+            inputmode="numeric"
+            required
+        >
+
+        <br>
+        <br>
+
+        <button type="submit">
+            Verificar código
+        </button>
+
+    </form>
+
+</body>
+
+</html>

@@ -1,170 +1,176 @@
-from django.conf import settings
 from django.db import models
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
-class Empresa(models.Model):
-    nombre = models.CharField(max_length=100)
+class Company(models.Model):
+    name = models.CharField(max_length=100)
     rut = models.CharField(max_length=20, unique=True)
-    direccion = models.CharField(max_length=150, blank=True)
-    telefono = models.CharField(max_length=20, blank=True)
-    activo = models.BooleanField(default=True)
+    address = models.CharField(max_length=150, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.nombre
+        return self.name
 
 
 class Area(models.Model):
-    nombre = models.CharField(max_length=100)
-    empresa = models.ForeignKey(
-        Empresa,
-        on_delete=models.CASCADE,
+    name = models.CharField(max_length=100)
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
         related_name='areas'
     )
-    activo = models.BooleanField(default=True)
+
+    active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nombre} - {self.empresa.nombre}"
+        return f"{self.name} - {self.company.name}"
 
 
-class TipoEquipo(models.Model):
-    nombre = models.CharField(max_length=100)
-    descripcion = models.TextField(blank=True)
-    activo = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.nombre
-
-
-class EstadoOrden(models.Model):
-    nombre = models.CharField(max_length=50)
-    descripcion = models.TextField(blank=True)
+class EquipmentType(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.nombre
+        return self.name
 
 
-class Equipo(models.Model):
-    codigo = models.CharField(max_length=30, unique=True)
-    nombre = models.CharField(max_length=100)
+class WorkOrderStatus(models.Model):
+    name = models.CharField(max_length=50)
+    description = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
 
-    tipo_equipo = models.ForeignKey(
-        TipoEquipo,
+    def __str__(self):
+        return self.name
+
+
+class Priority(models.Model):
+    name = models.CharField(max_length=50)
+    level = models.PositiveIntegerField(unique=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class MaintenanceType(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Equipment(models.Model):
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=100)
+    equipment_type = models.ForeignKey(
+        EquipmentType,
         on_delete=models.PROTECT,
-        related_name='equipos'
+        related_name='equipments'
     )
-
     area = models.ForeignKey(
         Area,
         on_delete=models.PROTECT,
-        related_name='equipos'
+        related_name='equipments'
     )
-
-    marca = models.CharField(max_length=100, blank=True)
-    modelo = models.CharField(max_length=100, blank=True)
-    numero_serie = models.CharField(max_length=100, blank=True)
-
-    fecha_adquisicion = models.DateField(
-        null=True,
-        blank=True
-    )
-
-    activo = models.BooleanField(default=True)
+    brand = models.CharField(max_length=100, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    serial_number = models.CharField(max_length=100, blank=True)
+    acquisition_date = models.DateField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.codigo} - {self.nombre}"
+        return f"{self.code} - {self.name}"
 
 
-class OrdenTrabajo(models.Model):
+class WorkOrder(models.Model):
+    number = models.CharField(max_length=30, unique=True)
 
-    PRIORIDADES = [
-        ('BAJA', 'Baja'),
-        ('MEDIA', 'Media'),
-        ('ALTA', 'Alta'),
-        ('CRITICA', 'Crítica'),
-    ]
-
-    numero_orden = models.CharField(
-        max_length=30,
-        unique=True
-    )
-
-    propietario = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    on_delete=models.PROTECT,
-    related_name='ordenes_trabajo',
-    null=True,
-    blank=True
-    )
-
-    equipo = models.ForeignKey(
-        Equipo,
+    equipment = models.ForeignKey(
+        Equipment,
         on_delete=models.PROTECT,
-        related_name='ordenes'
+        related_name='work_orders'
     )
 
-    estado = models.ForeignKey(
-        EstadoOrden,
+    status = models.ForeignKey(
+        WorkOrderStatus,
         on_delete=models.PROTECT,
-        related_name='ordenes'
+        related_name='work_orders'
     )
 
-    descripcion = models.TextField()
-
-    prioridad = models.CharField(
-        max_length=10,
-        choices=PRIORIDADES,
-        default='MEDIA'
+    priority = models.ForeignKey(
+        Priority,
+        on_delete=models.PROTECT,
+        related_name='work_orders'
     )
 
-    fecha_inicio = models.DateField()
-
-    fecha_termino = models.DateField(
-        null=True,
-        blank=True
+    maintenance_type = models.ForeignKey(
+        MaintenanceType,
+        on_delete=models.PROTECT,
+        related_name='work_orders'
     )
 
-    responsable = models.CharField(
-        max_length=100
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='work_orders'
     )
 
-    observaciones = models.TextField(
-        blank=True
-    )
+    description = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    responsible = models.CharField(max_length=100)
+    observations = models.TextField(blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def clean(self):
-        if (
-            self.fecha_termino
-            and self.fecha_inicio
-            and self.fecha_termino < self.fecha_inicio
-        ):
-            raise ValidationError(
-                {
-                    'fecha_termino':
-                    'La fecha de término no puede ser anterior a la fecha de inicio.'
-                }
-            )
+        if self.end_date and self.end_date < self.start_date:
+            raise ValidationError({
+                'end_date': 'End date cannot be earlier than start date.'
+            })
 
     def __str__(self):
-        return self.numero_orden
+        return self.number
 
-class DetalleOrden(models.Model):
-    orden = models.ForeignKey(
-        OrdenTrabajo,
+
+class WorkOrderDetail(models.Model):
+    work_order = models.ForeignKey(
+        WorkOrder,
         on_delete=models.CASCADE,
-        related_name='detalles'
+        related_name='details'
     )
-
-    actividad = models.CharField(max_length=200)
-
-    horas_trabajo = models.DecimalField(
+    activity = models.CharField(max_length=200)
+    work_hours = models.DecimalField(
         max_digits=5,
         decimal_places=2
     )
-
-    observacion = models.TextField(
-        blank=True
-    )
+    observation = models.TextField(blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return self.actividad
+        return self.activity
+
+
+class MaintenanceEvidence(models.Model):
+    work_order = models.ForeignKey(
+        WorkOrder,
+        on_delete=models.CASCADE,
+        related_name='evidences'
+    )
+    description = models.CharField(max_length=200)
+    file = models.FileField(
+        upload_to='maintenance_evidence/',
+        null=True,
+        blank=True
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.description

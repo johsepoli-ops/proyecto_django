@@ -1,135 +1,200 @@
 from django.contrib import admin
 from .models import (
-    Empresa,
+    Company,
     Area,
-    TipoEquipo,
-    EstadoOrden,
-    Equipo,
-    OrdenTrabajo
+    EquipmentType,
+    WorkOrderStatus,
+    Priority,
+    MaintenanceType,
+    Equipment,
+    WorkOrder,
+    WorkOrderDetail,
+    MaintenanceEvidence,
 )
 
 
-@admin.register(Empresa)
-class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'rut', 'telefono', 'activo')
-    search_fields = ('nombre', 'rut')
-    list_filter = ('activo',)
-    ordering = ('nombre',)
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'rut', 'phone', 'active')
+    search_fields = ('name', 'rut')
+    list_filter = ('active',)
+    ordering = ('name',)
 
 
 @admin.register(Area)
 class AreaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'empresa', 'activo')
-    search_fields = ('nombre', 'empresa__nombre')
-    list_filter = ('empresa', 'activo')
-    ordering = ('nombre',)
-    list_select_related = ('empresa',)
+    list_display = ('name', 'company', 'active')
+    search_fields = ('name', 'company__name')
+    list_filter = ('company', 'active')
+    ordering = ('name',)
+    list_select_related = ('company',)
+
+@admin.register(EquipmentType)
+class EquipmentTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'active')
+    search_fields = ('name',)
+    list_filter = ('active',)
+    ordering = ('name',)
 
 
-@admin.register(TipoEquipo)
-class TipoEquipoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'activo')
-    search_fields = ('nombre',)
-    list_filter = ('activo',)
-    ordering = ('nombre',)
+@admin.register(WorkOrderStatus)
+class WorkOrderStatusAdmin(admin.ModelAdmin):
+    list_display = ('name', 'active')
+    search_fields = ('name',)
+    list_filter = ('active',)
+    ordering = ('name',)
 
 
-@admin.register(EstadoOrden)
-class EstadoOrdenAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'descripcion')
-    search_fields = ('nombre',)
-    ordering = ('nombre',)
+@admin.register(Priority)
+class PriorityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'level', 'active')
+    search_fields = ('name',)
+    list_filter = ('active',)
+    ordering = ('level',)
 
 
-@admin.register(Equipo)
-class EquipoAdmin(admin.ModelAdmin):
+@admin.register(MaintenanceType)
+class MaintenanceTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'active')
+    search_fields = ('name',)
+    list_filter = ('active',)
+    ordering = ('name',)
+
+
+@admin.register(Equipment)
+class EquipmentAdmin(admin.ModelAdmin):
     list_display = (
-        'codigo',
-        'nombre',
-        'tipo_equipo',
+        'code',
+        'name',
+        'equipment_type',
         'area',
-        'marca',
-        'activo',
+        'brand',
+        'active',
+        'deleted_at',
     )
 
     search_fields = (
-        'codigo',
-        'nombre',
-        'marca',
-        'modelo',
-        'numero_serie',
-        'area__nombre',
-        'tipo_equipo__nombre',
+        'code',
+        'name',
+        'brand',
+        'model',
+        'serial_number',
+        'area__name',
+        'equipment_type__name',
     )
 
     list_filter = (
-        'tipo_equipo',
+        'equipment_type',
         'area',
-        'activo',
+        'active',
     )
 
-    ordering = ('codigo',)
+    ordering = ('code',)
 
     list_select_related = (
-        'tipo_equipo',
+        'equipment_type',
         'area',
     )
 
-@admin.action(description='Cambiar prioridad a ALTA')
-def cambiar_prioridad_alta(modeladmin, request, queryset):
-    queryset.update(prioridad='ALTA')
-    
-@admin.register(OrdenTrabajo)
-class OrdenTrabajoAdmin(admin.ModelAdmin):
-    actions = [cambiar_prioridad_alta]
+
+class WorkOrderDetailInline(admin.TabularInline):
+    model = WorkOrderDetail
+    extra = 1
+
+
+class MaintenanceEvidenceInline(admin.TabularInline):
+    model = MaintenanceEvidence
+    extra = 1
+
+
+@admin.register(WorkOrder)
+class WorkOrderAdmin(admin.ModelAdmin):
+    inlines = [
+        WorkOrderDetailInline,
+        MaintenanceEvidenceInline,
+    ]
+
     list_display = (
-        'numero_orden',
-        'equipo',
-        'estado',
-        'prioridad',
-        'propietario',
-        'fecha_inicio',
-        'fecha_termino',
-        'responsable',
+        'number',
+        'equipment',
+        'status',
+        'priority',
+        'maintenance_type',
+        'owner',
+        'start_date',
+        'end_date',
+        'responsible',
+        'deleted_at',
     )
 
     search_fields = (
-        'numero_orden',
-        'equipo__codigo',
-        'equipo__nombre',
-        'responsable',
-        'descripcion',
+        'number',
+        'equipment__code',
+        'equipment__name',
+        'responsible',
+        'description',
     )
 
     list_filter = (
-        'estado',
-        'prioridad',
-        'fecha_inicio',
+        'status',
+        'priority',
+        'maintenance_type',
+        'start_date',
     )
 
-    ordering = ('-fecha_inicio',)
+    ordering = ('-start_date',)
 
     list_select_related = (
-        'equipo',
-        'estado',
+        'equipment',
+        'status',
+        'priority',
+        'maintenance_type',
+        'owner',
     )
 
-def get_queryset(self, request):
-    qs = super().get_queryset(request)
 
-    if request.user.is_superuser:
-        return qs
+@admin.register(WorkOrderDetail)
+class WorkOrderDetailAdmin(admin.ModelAdmin):
+    list_display = (
+        'work_order',
+        'activity',
+        'work_hours',
+        'deleted_at',
+    )
 
-    return qs.filter(propietario=request.user)
+    search_fields = (
+        'work_order__number',
+        'activity',
+    )
 
-def save_model(self, request, obj, form, change):
-    if not request.user.is_superuser:
-        obj.propietario = request.user
+    list_filter = (
+        'deleted_at',
+    )
 
-    super().save_model(request, obj, form, change)
+    list_select_related = (
+        'work_order',
+    )
 
-def get_readonly_fields(self, request, obj=None):
-    if request.user.is_superuser:
-        return ()
 
-    return ('propietario',)
+@admin.register(MaintenanceEvidence)
+class MaintenanceEvidenceAdmin(admin.ModelAdmin):
+    list_display = (
+        'work_order',
+        'description',
+        'uploaded_at',
+        'deleted_at',
+    )
+
+    search_fields = (
+        'work_order__number',
+        'description',
+    )
+
+    list_filter = (
+        'uploaded_at',
+        'deleted_at',
+    )
+
+    list_select_related = (
+        'work_order',
+    )
