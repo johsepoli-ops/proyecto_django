@@ -18,6 +18,11 @@ urlpatterns = [
     ),
 
     path(
+        'api/',
+        include('rest_api.urls')
+    ),
+
+    path(
         '',
         dashboard,
         name='dashboard'
